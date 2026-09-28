@@ -2,6 +2,7 @@ var buttonColours = ["red","blue","green","yellow"];
 var gamePattern = [];
 var userClickedPattern = [];
 var started = false;
+var waitingForNextSequence = false;
 var level = 0;
 var highestScore = Number(localStorage.getItem("highestScore")  || 0);
 document.querySelector("#highest-score").textContent = "Your highest Score Was : " + highestScore;
@@ -31,6 +32,7 @@ function playSound(name){
 }
 
 $(".btn").click(function(){
+    if (!started || waitingForNextSequence) return;
     var userChosenColour = $(this).attr("id");
     userClickedPattern.push(userChosenColour);
     playSound(userChosenColour);
@@ -47,20 +49,27 @@ function animatePress(currentColour){
     },100);
 }
 
- $(document).on("keydown",function(){
+ function startGame(){
     if(started === false){
         startOver();
-        nextSequence();
         started = true;
+        $("#start-button").prop("disabled", true).text("Game in Progress");
+        nextSequence();
 
     } 
+ }
+ $("#start-button").on("click", startGame);
+ $(document).on("keydown", function(event){
+    if (!event.repeat) startGame();
  });
  function checkAnswer(currentLevel){
     if(gamePattern[currentLevel] === userClickedPattern[currentLevel]){
         if(userClickedPattern.length === gamePattern.length){
+            waitingForNextSequence = true;
             setTimeout(function(){
                 userClickedPattern = [];
                 nextSequence();
+                waitingForNextSequence = false;
 
             },1000);
         }
@@ -73,7 +82,8 @@ function animatePress(currentColour){
             $("body").removeClass("game-over");
          },200);
 
-         $("#level-title").text("Game Over, Press Any Key to Restart");
+         $("#level-title").text("Game Over! Tap Restart or Press Any Key");
+         $("#start-button").prop("disabled", false).text("Restart Game");
          started = false;
          
 
@@ -86,7 +96,7 @@ function animatePress(currentColour){
     gamePattern = [];
     userClickedPattern = [];
     started = false;
-    $("#level-title").text("Press A Key to Start");
+    waitingForNextSequence = false;
 
  }
 
